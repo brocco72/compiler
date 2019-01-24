@@ -42,6 +42,14 @@ def is_defined(id_str):
     return False
 
 
+def del_scope():
+    global symbol_table
+    for i, entry in enumerate(symbol_table):
+        for key in entry.keys():
+            if entry[key]["scope"] == scope:
+                del symbol_table[i]
+
+
 def scanner(last_token_type):
     global source_text
     source_text = source_text.lstrip()
@@ -91,6 +99,7 @@ def scanner(last_token_type):
         return "{", special
     elif source_text.find("}") == 0:
         global scope
+        del_scope()
         scope -= 1
         source_text = source_text.replace("}", "", 1)
         return "}", special
