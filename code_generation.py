@@ -18,6 +18,9 @@ def findaddr(input):
 def top(stack):
     return len(stack) - 1
 
+def convertToStr(func, par1='', par2='', par3=''):
+    return '(' + func + ', ' + str(par1) + ', ' + str(par2) + ', ' + str(par3) + ')'
+
 def code_generation(action, input):
     global PB_counter
     global address
@@ -27,20 +30,22 @@ def code_generation(action, input):
 
     elif action == "#ADDSUB":
         t = gettemp()
-        if ss.get(ss.top - 1) == "+":
-            PB[PB_counter] = (ADD, ss.get(ss.top), ss.get(ss.top - 1), t)
-        elif ss.get(ss.top - 1) == "-":
-            PB[PB_counter] = (SUB, ss.get(ss.top), ss.get(ss.top - 1), t)
+        if ss[top(ss) - 1] == "+":
+            PB[PB_counter] = (ADD, ss[top(ss)], ss[top(ss) - 1], t)
+        elif ss[top(ss) - 1] == "-":
+            PB[PB_counter] = (SUB, ss[top(ss)], ss[top(ss) - 1], t)
         PB_counter += 1
-        ss.pop(3)
-        ss.push(t)
+        for i in range(3):
+            ss.pop()
+        ss.append(t)
         return
     elif action == "MULT":
         t = gettemp()
-        PB[PB_counter] = (MULT, ss.get(ss.top), ss.get(ss.top - 1), t)
+        PB[PB_counter] = (MULT, ss[top(ss)], ss[top(ss) - 1], t)
         PB_counter += 1
-        ss.pop(2)
-        ss.push(t)
+        ss.pop()
+        ss.pop()
+        ss.append(t)
         return
     elif action == "#FUN_ADDR":
         fun_id = ss.pop()
@@ -96,24 +101,25 @@ def code_generation(action, input):
         ss.pop()
         return
     elif action == "#SAVE":
-        ss.push(PB_counter)
+        ss.append(PB_counter)
         PB_counter += 1
         return
     elif action == "#LABEL":
-        ss.push(PB_counter)
+        ss.append(PB_counter)
         return
     elif action == "#SAVE_CONTINUE":
         whiles.append(([PB_counter], []))
         return
     elif action == "#WHILE":
-        PB[ss.get(ss.top)] = (JPF, ss.get(ss.top - 1), PB_counter + 1, )
-        PB[PB_counter] = (JP, ss.get(ss.top - 2), ,)
+        PB[ss[top(ss)]] = (JPF, ss[top(ss) - 1], PB_counter + 1, )
+        PB[PB_counter] = (JP, ss[top(ss) - 2], ,)
         PB_counter += 1
         last_loop_breaks = whiles[-1][1]
         for i in last_loop_breaks:
             PB[i] = (JP, PB_counter, ,)
         whiles.pop()
-        ss.pop(3)
+        for i in range(3):
+            ss.pop()
         return
     elif action == "#JMP_BEGIN":
         # PB[PB_counter] = (JP, ss.get(ss.top))
@@ -125,39 +131,42 @@ def code_generation(action, input):
         PB_counter += 1
         return
     elif action == "#JPF_SAVE":
-        PB[ss.get(ss.top)] = (JPF, ss.get(ss.top-1), PB_counter+1)
-        ss.pop(2)
-        ss.push(PB_counter)
+        PB[ss[top(ss)]] = (JPF, ss[top(ss)-1], PB_counter+1)
+        ss.pop()
+        ss.pop()
+        ss.append(PB_counter)
         PB_counter += 1
         return
     elif action == "#JP":
-        PB[ss.get(ss.top)] = (JP, PB_counter, ,)
+        PB[ss[top(ss)]] = (JP, PB_counter, ,)
         ss.pop()
         return
     elif action == "#JPT_SAVE":
         pass
     elif action == "#COMPARE_CASE":
         t = gettemp()
-        PB[PB_counter] = (EQ, int(input), ss.get(ss.top - 1), t)
+        PB[PB_counter] = (EQ, int(input), ss[top(ss) - 1], t)
         PB_counter += 1
-        ss.push(t)
+        ss.append(t)
         return
     elif action == "#JPF":
-        PB[ss.get(ss.top)] = JPF(ss.get(ss.top - 1), PB_counter, ,)
-        ss.pop(2)
+        PB[ss[top(ss)]] = JPF(ss[top(ss) - 1], PB_counter, ,)
+        ss.pop()
+        ss.pop()
         return
     elif action == "#PUSH_INPUT":
-        ss.push(input)
+        ss.append(input)
         return
     elif action == "#RELOP":
         t = gettemp()
-        if ss.get(ss.top - 1) == "<":
-            PB[PB_counter] = (LT, ss.get(ss.top - 2), ss.get(ss.top), t)
-        elif ss.get(ss.top - 1) == "==":
-            PB[PB_counter] = (EQ, ss.get(ss.top - 2), ss.get(ss.top), t)
+        if ss[top(ss) - 1] == "<":
+            PB[PB_counter] = (LT, ss[top(ss) - 2], ss[top(ss)], t)
+        elif ss[top(ss) - 1] == "==":
+            PB[PB_counter] = (EQ, ss[top(ss) - 2], ss[top(ss)], t)
         PB_counter += 1
-        ss.pop(3)
-        ss.push(t)
+        for i in range(3):
+            ss.pop()
+        ss.append(t)
         return
     elif action == "#RET_ADDR":
         pass

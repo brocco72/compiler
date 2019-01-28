@@ -1,7 +1,7 @@
 import sys
 from collections import defaultdict
-from compiler import scanner
-
+from compler import scanner
+from code_generation import code_generation
 TD = {}
 
 
@@ -208,6 +208,7 @@ def dec(type, ebnf):
             state = 7
             continue
         elif state == 7 and token == "ID":
+            code_generation("#PUSH_SS", type)
             state = 8
             continue
         elif state == 8 and token in ebnf.first["dec'"]:
@@ -231,6 +232,7 @@ def dec_(type, ebnf):
             return
         elif state == 10 and token in ebnf.first["fdec"]:
             #END STATE
+            code_generation("#FUN_ADDR", type)
             status = fdec(type, token)
             state = 11
             return
@@ -245,12 +247,14 @@ def vdec(type, ebnf):
         token, type = scanner(type)
         if (state == 12 or state == 16) and token == ";":
             # END STATE
+            code_generation("#VAR_ADDR", type)
             state = 13
             return
         elif state == 12 and token == "[":
             state = 14
             continue
         elif state == 14 and token == "NUM":
+            code_generation("#ARR_ADDR", type)
             state = 15
             continue
         elif state == 15 and token == "]":
@@ -279,6 +283,7 @@ def fdec(type, ebnf):
     while True:
         token, type = scanner(type)
         if state == 19 and token == "(":
+            code_generation("#INC_SCOPE", type)
             state = 20
             continue
         elif state == 20 and token in ebnf.first["params"]:
@@ -290,7 +295,10 @@ def fdec(type, ebnf):
             continue
         elif state == 22 and token in ebnf.first["cs"]:
             # END STATE
+            code_generation("#DEC_SCOPE", type)
             status = cs(type, token)
+            code_generation("#JMP_CALLER", type)
+            code_generation("#POP_SS", type)
             state = 23
             return
         else:
@@ -303,17 +311,18 @@ def params(type, ebnf):
     while True:
         token, type = scanner(type)
         if state == 24 and token == "void":
-            state = 25
-            continue
-        elif state == 25 and token in ebnf.first["params'"]:
-            # END STATE
-            status = params_(type, token)
             state = 26
             return
+        # elif state == 25 and token in ebnf.first["params'"]:
+        #     # END STATE
+        #     status = params_(type, token)
+        #     state = 26
+        #     return
         elif state == 24 and token == "int":
             state = 27
             continue
         elif state == 27 and token == "ID":
+            code_generation("#PAR_ADDR", type)
             state = 28
             continue
         elif state == 28 and token in ebnf.first["P'"]:
@@ -329,29 +338,29 @@ def params(type, ebnf):
             pass
 
 
-def params_(type, ebnf):
-    state = 30
-    while True:
-        token, type = scanner(type)
-        if state == 30 and token == "ID":
-            state = 31
-            continue
-        elif state == 31 and token in ebnf.first["P'"]:
-            status = P_(type, ebnf)
-            state = 32
-            continue
-        elif state == 32 and token in ebnf.first["pl"]:
-            # END STATE
-            status = pl(type, ebnf)
-            state = 33
-            return
-        elif state == 30 and token in ebnf.follow["params'"]:
-            # END STATE
-            # EPSILON EDGE
-            state = 33
-            return
-        else: # ERROR
-            pass
+# def params_(type, ebnf):
+#     state = 30
+#     while True:
+#         token, type = scanner(type)
+#         if state == 30 and token == "ID":
+#             state = 31
+#             continue
+#         elif state == 31 and token in ebnf.first["P'"]:
+#             status = P_(type, ebnf)
+#             state = 32
+#             continue
+#         elif state == 32 and token in ebnf.first["pl"]:
+#             # END STATE
+#             status = pl(type, ebnf)
+#             state = 33
+#             return
+#         elif state == 30 and token in ebnf.follow["params'"]:
+#             # END STATE
+#             # EPSILON EDGE
+#             state = 33
+#             return
+#         else: # ERROR
+#             pass
 
 
 def pl(type, ebnf):
@@ -388,6 +397,7 @@ def P(type, ebnf):
             state = 39
             continue
         elif state == 39 and token == "ID":
+            code_generation("#PAR_ADDR", type)
             state = 40
             continue
         elif state == 40 and token in ebnf.first["P'"]:
@@ -1158,3 +1168,4 @@ if __name__ == "main":
     create_transition_diagram()
 
     parse_transition_diagram("program", None, None, None)
+    program(None, ebnf)
