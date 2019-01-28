@@ -94,7 +94,6 @@ def scanner(last_token_type):
         return "]", special
     elif source_text.find("{") == 0:
         global scope
-        scope += 1
         source_text = source_text.replace("{", "", 1)
         return "{", special
     elif source_text.find("}") == 0:

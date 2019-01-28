@@ -1,35 +1,12 @@
-class Stack:
-    def __init__(self):
-        self.items = []
-        self.top = -1
-
-    def push(self, item):
-        self.items.append(item)
-        self.top += 1
-
-    def pop(self, n=1):
-        self.top -= n
-        if n == 1:
-            return self.items.pop()
-        else:
-            ret = []
-            for i in range(n):
-                ret.append(self.items.pop())
-            return ret
-
-
-    def get(self, index):
-        return ss.items[index]
-    def size(self):
-        return len(self.items)
-
-
-ss = Stack()
+ss = []
 add_flag = 0
 PB_SIZE = 10
 PB = [] * PB_SIZE
 PB_counter = 0
 whiles = []
+address = 10000
+#TODO remove symbol table after merge
+symbol_table = []
 
 def gettemp():
     pass
@@ -38,15 +15,15 @@ def gettemp():
 def findaddr(input):
     pass
 
+def top(stack):
+    return len(stack) - 1
 
 def code_generation(action, input):
     global PB_counter
+    global address
+    global scope
     if action == "#PUSH_SS":
-        p = findaddr(input)
-        if not p:  # if input is not in SYMBOL TABLE, insert and allocate space
-            pass
-        ss.push(p)
-        return
+        ss.append(input)
 
     elif action == "#ADDSUB":
         t = gettemp()
@@ -66,23 +43,58 @@ def code_generation(action, input):
         ss.push(t)
         return
     elif action == "#FUN_ADDR":
-        pass
+        fun_id = ss.pop()
+        fun_dict = symbol_table[fun_id]
+        fun_dict['addr'] = PB_counter
+        fun_dict['params'] = []
+        fun_dict['params_count'] = 0
+        fun_dict['ret_addr'] = address
+        ss.append(fun_dict['ret_addr'])
+        address+= 32
+        fun_dict['ret_val'] = address
+        address += 32
+        PB_counter += 1
+        ss.append(fun_id)
+        return
     elif action == "#VAR_ADDR":
-        pass
+        var_dict = symbol_table[ss.pop()]
+        var_dict['addr'] = address
+        address += 32
+        return
     elif action == "#ARR_ADDR":
-        pass
+        arr_dict = symbol_table[ss.pop()]
+        arr_dict['addr'] = address
+        address += 32
+        PB[PB_counter] = '(ASSIGN, #' + str(address) + ',' + str(arr_dict['addr']) + ', )'
+        PB_counter += 1
+        address += 32 * input
+        return
     elif action == "#INC_SCOPE":
-        pass
+        scope +=1
+        return
     elif action == "#PAR_ADDR":
-        pass
-    elif action == "#FUNC_SYMBTBL":
-        pass
+        param_dict = symbol_table[input]
+        param_dict['addr'] = address
+        fun_dict = symbol_table[ss[top(ss)]]
+        fun_dict['params_count'] += 1
+        fun_dict['params'].append(address)
+        address += 32
+        return
     elif action == "#DEC_SCOPE":
-        pass
-    elif action == "#PUSH_RETVAL":
-        pass
+        scope -= 1
+        return
+    elif action == "#ASSIGN_RET":
+        fun_dict = symbol_table[ss[top(ss) - 1]]
+        PB[PB_counter] = '(ASSIGN, #' + str(ss.pop()) + ',' + str(fun_dict['ret_val']) + ', )'
+        PB_counter += 1
+        return
     elif action == "#JMP_CALLER":
-        pass
+        fun_dict = symbol_table[ss[top(ss)]]
+        PB[PB_counter] = '(JP, ' + str(fun_dict['ret_addr']) + ', , )'
+        return
+    elif action == "#POP_SS":
+        ss.pop()
+        return
     elif action == "#SAVE":
         ss.push(PB_counter)
         PB_counter += 1
