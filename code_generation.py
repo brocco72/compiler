@@ -55,6 +55,8 @@ def code_generation(action, input):
         ss.pop()
         ss.append(t)
         return
+    # elif action == "#PUSH_VOID":
+        # ss.append("void")
     elif action == "#FUN_ADDR":
         fun_id = ss.pop()
         fun_dict = symbol_table[fun_id].values()[0]
@@ -62,7 +64,6 @@ def code_generation(action, input):
         fun_dict['params'] = []
         fun_dict['params_count'] = 0
         fun_dict['ret_addr'] = address
-        ss.append(fun_dict['ret_addr'])
         address+= 32
         fun_dict['ret_val'] = address
         address += 32
