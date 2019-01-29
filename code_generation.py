@@ -26,12 +26,20 @@ def code_generation(action, input):
     if action == "#PUSH_SS":
         ss.append(input)
         return
+    elif action == "#PUSH_ADDR":
+        ss.append(symbol_table[ss[top(ss)]].values()[0]["addr"])
+    elif action == "#ASSIGN":
+        PB.append(convertToStr("ASSIGN", ss[top(ss)], ss[top(ss)]))
+        PB_counter += 1
+        ss.pop()
+        ss.pop()
+        return
     elif action == "#ADDSUB":
         t = gettemp()
         if ss[top(ss) - 1] == "+":
-            PB.append(convertToStr("ADD", symbol_table[ss[top(ss)]].values()[0], symbol_table[ss[top(ss) - 1]].values()[0], t))
+            PB.append(convertToStr("ADD", ss[top(ss)], ss[top(ss) - 1], t))
         elif ss[top(ss) - 1] == "-":
-            PB.append(convertToStr("SUB", symbol_table[ss[top(ss)]].values()[0], symbol_table[ss[top(ss) - 1]].values()[0], t))
+            PB.append(convertToStr("SUB", ss[top(ss)], ss[top(ss) - 1], t))
         PB_counter += 1
         for i in range(3):
             ss.pop()
@@ -40,7 +48,7 @@ def code_generation(action, input):
     elif action == "MULT":
         t = gettemp()
         # symbol_table[ss[top(ss)]]
-        PB.append(convertToStr("MULT", symbol_table[ss[top(ss)]].values()[0], symbol_table[ss[top(ss) - 1]].values()[0], t))
+        PB.append(convertToStr("MULT", ss[top(ss)], ss[top(ss) - 1], t))
         # PB[PB_counter] = (MULT, ss[top(ss)], ss[top(ss) - 1], t)
         PB_counter += 1
         ss.pop()
@@ -171,7 +179,7 @@ def code_generation(action, input):
         t = gettemp()
         if ss[top(ss) - 1] == "<":
             PB.append(convertToStr("LT", ss[top(ss) - 2], ss[top(ss)], t))
-        elif ss[top(ss) - 1] == "==":
+        else:
             PB.append(convertToStr("EQ", ss[top(ss) - 2], ss[top(ss)], t))
         PB_counter += 1
         for i in range(3):

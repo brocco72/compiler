@@ -525,6 +525,7 @@ def es(type, ebnf):
             continue
         elif state == 58 and token == ";":
             # END STATE
+            code_generation("#JMP_BEGIN", type)
             state = 57
             return
         elif state == 55 and token == "break":
@@ -532,6 +533,7 @@ def es(type, ebnf):
             continue
         elif state == 59 and token == ";":
             # END STATE
+            code_generation("#JMP_END", type)
             state = 57
             return
         elif state == 55 and token == ";":
@@ -560,6 +562,7 @@ def ss(type, ebnf):
             state = 64
             continue
         elif state == 64 and token in ebnf.first["S"]:
+            code_generation("#SAVE", type)
             status = S(type, ebnf)
             state = 65
             continue
@@ -568,7 +571,9 @@ def ss(type, ebnf):
             continue
         elif state == 66 and token in ebnf.first["S"]:
             # END STATE
+            code_generation("#JPF_SAVE", type)
             status = S(type, ebnf)
+            code_generation("#JP", type)
             state = 67
             return
         else: # ERROR
@@ -585,6 +590,8 @@ def _is(type, ebnf):
             state = 70
             continue
         elif state == 70 and token in ebnf.first["E"]:
+            code_generation("LABEL", type)
+            code_generation("SAVE_CONTINUE", type)
             status = E(type, ebnf)
             state = 71
             continue
@@ -593,7 +600,9 @@ def _is(type, ebnf):
             continue
         elif state == 72 and token in ebnf.first["S"]:
             # END STATE
+            code_generation("#SAVE", type)
             status = S(type, ebnf)
+            code_generation("#WHILE", type)
             state = 73
             return
         else: # ERROR
@@ -614,16 +623,20 @@ def rs(type, ebnf):
         else:
             pass
 
+
 def rs_(type, ebnf):
     state = 77
     while True:
         token, type = scanner(type)
         if state == 77 and token == ";":
             # END STATE
+            code_generation("#JMP_CALLER", type)
             state = 78
             return
         elif state == 77 and token in ebnf.first["E"]:
             status = E(type, ebnf)
+            code_generation("#ASSIGN_RET", type)
+            code_generation("JMP_CALLER", type)
             state = 79
             continue
         elif state == 79 and token == ";":
@@ -637,6 +650,7 @@ def sws(type, ebnf):
     while True:
         token, type = scanner(type)
         if state == 80 and token == "switch":
+            code_generation("#SAVE_SWITCH", type)
             state = 81
             continue
         elif state == 81 and token == "(":
@@ -662,6 +676,7 @@ def sws(type, ebnf):
             continue
         elif state == 87 and token == "}":
             state = 88
+            code_generation("#END_SWITCH", type)
             return
         else:
             pass
@@ -676,6 +691,7 @@ def cas(type, ebnf):
             state = 90
             continue
         elif state == 90 and token in ebnf.first["cas"]:
+            code_generation("#JPF", type)
             status = cas(type, ebnf)
             state = 91
             return
@@ -692,15 +708,18 @@ def ca(type, ebnf):
     while True:
         token, type = scanner(type)
         if state == 92 and token == "case":
+            code_generation("#LABEL", type)
             state = 93
             continue
         elif state == 93 and token == "NUM":
+            code_generation("#COMPARE_CASE", type)
             state = 94
             continue
         elif state == 94 and token == ":":
             state = 95
             continue
         elif state == 95 and token in ebnf["sl"]:
+            code_generation("SAVE", type)
             status = sl(type, ebnf)
             state = 96
             return
@@ -735,6 +754,7 @@ def E(type, ebnf):
     while True:
         token, type = scanner(type)
         if state == 101 and token == "ID":
+            code_generation("#PUSH_SS", type)
             state = 102
             continue
         elif state == 102 and token in ebnf.first["E'"]:
@@ -763,6 +783,7 @@ def E(type, ebnf):
             state = 103
             return
         elif state == 101 and token == "NUM":
+            code_generation("#PUSH_NUM", type)
             state = 109
             continue
         elif state == 109 and token in ebnf.first["T'"]:
@@ -833,6 +854,7 @@ def E__(type, ebnf):
             continue
         elif state == 122 and token in ebnf.first["E"]:
             status = E(type, ebnf)
+            code_generation("#ASSIGN", type)
             state = 121
             return
         else:
@@ -845,6 +867,7 @@ def var(type, ebnf):
         token, type = scanner(type)
         if state == 123 and token in ebnf.follow["var"]:
             # EPSILON
+            code_generation("#PUSH_ADDR", type)
             state = 124
             return
         elif state == 123 and token == "[":
@@ -852,6 +875,7 @@ def var(type, ebnf):
             continue
         elif state == 125 and token in ebnf.first["E"]:
             status = E(type, ebnf)
+            code_generation("#ARR_READ", type)
             state = 126
             continue
         elif state == 126 and token == "]":
@@ -871,6 +895,7 @@ def se(type, ebnf):
             continue
         elif state == 128 and token in ebnf.first["ae"]:
             status = ae(type, ebnf)
+            code_generation("#RELOP", type)
             state = 129
             return
         elif state == 127 and token in ebnf.follow["se"]:
@@ -886,9 +911,12 @@ def relop(type, ebnf):
     while True:
         token, type = scanner(type)
         if state == 130 and token == "<":
+            code_generation("#PUSH_INPUT", type)
             state = 131
             return
         elif state == 130 and token == "==":
+            code_generation("#PUSH_INPUT", type)
+            state = 131
             return
         else:
             pass
@@ -923,6 +951,7 @@ def ae_(type, ebnf):
             state = 137
             continue
         elif state == 137 and token in ebnf.first["ae'"]:
+            code_generation("#ADDSUB", type)
             status = ae_(type, ebnf)
             state = 138
             return
@@ -938,9 +967,11 @@ def addop(type, ebnf):
     while True:
         token, type = scanner(type)
         if state == 139 and token == "+":
+            code_generation("PUSH_INPUT", type)
             state = 140
             return
         elif state == 139 and token == "-":
+            code_generation("PUSH_INPUT", type)
             state = 140
             return
         else:
@@ -975,6 +1006,7 @@ def T_(type, ebnf):
             state = 146
             continue
         elif state == 146 and token in ebnf.first["T'"]:
+            code_generation("#MULT", type)
             status = T_(type, ebnf)
             state = 147
             return
@@ -1000,6 +1032,7 @@ def F(type, ebnf):
             state = 151
             return
         elif state == 148 and token == "ID":
+            code_generation("#PUSH_SS", type)
             state = 152
             continue
         elif state == 152 and token in ebnf.first["F'"]:
@@ -1037,10 +1070,13 @@ def call(type, ebnf):
             state = 156
             continue
         elif state == 156 and token in ebnf.first["args"]:
+            code_generation("#PARAM_COUNT", type)
             status = ae_(type, ebnf)
             state = 157
             continue
         elif state == 157 and token == ")":
+            code_generation("#JP_CALL", type)
+            code_generation("#RET_ADDR", type)
             state = 158
             return
         else:
@@ -1072,6 +1108,7 @@ def argl(type, ebnf):
             state = 162
             continue
         elif state == 162 and token in ebnf.first["argl'"]:
+            code_generation("#ASS_ARG", type)
             status = argl_(type, ebnf)
             state = 163
             return
@@ -1091,6 +1128,7 @@ def argl_(type, ebnf):
             state = 166
             continue
         elif state == 166 and token in ebnf.first["argl'"]:
+            code_generation("#ASS_ARG", type)
             status = argl_(type, ebnf)
             state = 167
             return
