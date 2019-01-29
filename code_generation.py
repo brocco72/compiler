@@ -4,9 +4,6 @@ PB_counter = 0
 whiles = []
 address = 10000
 
-#TODO remove symbol table after merge
-symbol_table = []
-
 
 def gettemp():
     global address
