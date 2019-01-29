@@ -1,7 +1,5 @@
 import sys
 from collections import defaultdict
-from compler import scanner
-from code_generation import code_generation
 TD = {}
 
 

@@ -11,10 +11,6 @@ def gettemp():
     return address - 32
 
 
-def findaddr(input):
-    pass
-
-
 def top(stack):
     return len(stack) - 1
 
@@ -76,7 +72,8 @@ def code_generation(action, input):
         address += 32
         PB.append('(ASSIGN, #' + str(address) + ',' + str(arr_dict['addr']) + ', )')
         PB_counter += 1
-        address += 32 * input
+        for i in range(input):
+
         return
     elif action == "#INC_SCOPE":
         scope += 1
@@ -207,11 +204,8 @@ def code_generation(action, input):
         t1 = gettemp()
         PB.append(convertToStr("ADD", arr_dict["addr"], ss.pop(), t1))
         PB_counter += 1
-        t2 = gettemp()
-        PB.append(convertToStr("ASSIGN", str('@') + str(t1), t2))
-        PB_counter += 1
         ss.pop()
-        ss.append(t2)
+        ss.append('@' + str(t1))
         return
     elif action == "#PUSH_NUM":
         t1 = gettemp()
@@ -219,3 +213,8 @@ def code_generation(action, input):
         PB_counter += 1
         ss.append(t1)
         return
+
+
+
+with open("code.c", "r") as file:
+    source_text = file.read()
