@@ -9,7 +9,9 @@ address = 10000
 symbol_table = []
 
 def gettemp():
-    pass
+    global address
+    address += 32
+    return address - 32
 
 
 def findaddr(input):
@@ -49,7 +51,7 @@ def code_generation(action, input):
         return
     elif action == "#FUN_ADDR":
         fun_id = ss.pop()
-        fun_dict = symbol_table[fun_id]
+        fun_dict = symbol_table[fun_id].values()[0]
         fun_dict['addr'] = PB_counter
         fun_dict['params'] = []
         fun_dict['params_count'] = 0
@@ -62,12 +64,12 @@ def code_generation(action, input):
         ss.append(fun_id)
         return
     elif action == "#VAR_ADDR":
-        var_dict = symbol_table[ss.pop()]
+        var_dict = symbol_table[ss.pop()].values()[0]
         var_dict['addr'] = address
         address += 32
         return
     elif action == "#ARR_ADDR":
-        arr_dict = symbol_table[ss.pop()]
+        arr_dict = symbol_table[ss.pop()].values()[0]
         arr_dict['addr'] = address
         address += 32
         PB[PB_counter] = '(ASSIGN, #' + str(address) + ',' + str(arr_dict['addr']) + ', )'
@@ -78,9 +80,9 @@ def code_generation(action, input):
         scope +=1
         return
     elif action == "#PAR_ADDR":
-        param_dict = symbol_table[input]
+        param_dict = symbol_table[input].values()[0]
         param_dict['addr'] = address
-        fun_dict = symbol_table[ss[top(ss)]]
+        fun_dict = symbol_table[ss[top(ss)]].values()[0]
         fun_dict['params_count'] += 1
         fun_dict['params'].append(address)
         address += 32
@@ -89,12 +91,12 @@ def code_generation(action, input):
         scope -= 1
         return
     elif action == "#ASSIGN_RET":
-        fun_dict = symbol_table[ss[top(ss) - 1]]
+        fun_dict = symbol_table[ss[top(ss) - 1]].values()[0]
         PB[PB_counter] = '(ASSIGN, #' + str(ss.pop()) + ',' + str(fun_dict['ret_val']) + ', )'
         PB_counter += 1
         return
     elif action == "#JMP_CALLER":
-        fun_dict = symbol_table[ss[top(ss)]]
+        fun_dict = symbol_table[ss[top(ss)]].values()[0]
         PB[PB_counter] = '(JP, ' + str(fun_dict['ret_addr']) + ', , )'
         return
     elif action == "#POP_SS":
@@ -169,8 +171,40 @@ def code_generation(action, input):
         ss.append(t)
         return
     elif action == "#RET_ADDR":
-        pass
+        fun_dict = symbol_table[ss.pop()].values()[0]
+        fun_dict['ret_addr'] = PB_counter
+        return
     elif action == "#JP_CALL":
-        pass
+        ss.pop()
+        fun_dict = symbol_table[ss[top(ss)]].values()[0]
+        PB.append(convertToStr("JP", fun_dict['addr']))
+        PB_counter += 1
+        return
+    elif action == "#PARAM_CNT":
+        fun_dict = symbol_table[ss[top(ss)]].values()[0]
+        ss.append(fun_dict["params_count"])
+        return
     elif action == "#ASS_ARG":
-        pass
+        fun_dict = symbol_table[ss[top(ss) - 2]].values()[0]
+        param_num = fun_dict["params_count"] - ss[top(ss) -1]
+        PB.append(convertToStr("ASSIGN", ss.pop(), fun_dict["params"][param_num]))
+        PB_counter += 1
+        ss.append(ss.pop() - 1)
+        return
+    elif action == "#ARR_READ":
+        arr_dict = symbol_table[ss[top(ss) - 1]].values()[0]
+        t1 = gettemp()
+        PB.append(convertToStr("ADD", arr_dict["addr"], ss.pop(), t1))
+        PB_counter += 1
+        t2 = gettemp()
+        PB.append(convertToStr("ASSIGN", str('@') + str(t1), t2))
+        PB_counter += 1
+        ss.pop()
+        ss.append(t2)
+        return
+    elif action == "#PUSH_NUM":
+        t1 = gettemp()
+        PB.append(convertToStr("ASSIGN", '#' + str(input), t1))
+        PB_counter += 1
+        ss.append(t1)
+        return
